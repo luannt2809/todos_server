@@ -14,6 +14,5 @@ router.get("/:MaND", getNguoiDungByID);
 router.post("/register", registerNguoiDung);
 router.post("/login", loginNguoiDung);
 router.put("/update/:MaND", updateNguoiDung);
-// router.delete("/delete/:MaND", deleteNguoiDung);
 
 module.exports = router;

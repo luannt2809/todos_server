@@ -3,7 +3,7 @@
 // module.exports = connectString;
 
 const config = {
-  server: "DESKTOP-55BHLHA\\LUANNT",
+  server: "ADMIN",
   user: "luannt2809",
   password: "123456",
   database: "TodosDB",
