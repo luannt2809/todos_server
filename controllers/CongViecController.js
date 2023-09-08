@@ -21,6 +21,52 @@ exports.getListCongViec = async (req, res) => {
   }
 };
 
+exports.getListCongViecByMaND = async (req, res) => {
+  try {
+    await sql.connect(dbConfig);
+
+    const procName = "GetAllCongViecByMaND";
+    const inputParam = req.params.MaND;
+
+    const request = new sql.Request();
+    request.input("MaND", sql.Int, inputParam);
+
+    const result = await request.execute(procName);
+
+    res.json(result.recordset);
+
+    sql.close();
+  } catch (err) {
+    res.status(500).send("Lỗi khi lấy dữ liệu");
+    console.log(err);
+    sql.close();
+  }
+};
+
+exports.timKiemCongViec = async (req, res) => {
+  try {
+    await sql.connect(dbConfig);
+
+    const maND = req.query.MaND;
+    const startDate = req.query.StartDate;
+
+    const procName = "TimKiemCongViec";
+    const request = new sql.Request();
+    request.input("MaND", sql.Int, maND);
+    request.input("StartDate", sql.Date, startDate);
+
+    const result = await request.execute(procName);
+
+    res.json(result.recordset);
+
+    sql.close();
+  } catch (err) {
+    res.status(500).send("Lỗi khi lấy dữ liệu");
+    console.log(err);
+    sql.close();
+  }
+};
+
 exports.getCongViecByID = async (req, res) => {
   try {
     await sql.connect(dbConfig);
@@ -69,14 +115,14 @@ exports.insertCongViec = async (req, res) => {
   }',
                   N'${congViec.TrangThai}', ${congViec.TienDo}, ${
     congViec.GhiChu ? `N'${congViec.GhiChu}'` : null
-  }, ${congViec.MaNguoiLam}, ${congViec.MaNguoiGiao}, ${
-    congViec.Kieu ? congViec.Kieu : null
-  })`;
+  }, ${congViec.MaNguoiLam ? congViec.MaNguoiLam : null}, ${
+    congViec.MaNguoiGiao ? congViec.MaNguoiGiao : null
+  }, ${congViec.Kieu ? congViec.Kieu : null})`;
 
   sql.query(query, (err, rows) => {
     if (err) {
       console.log(err);
-      res.send("Thêm công việc thất bại");
+      res.status(500).send("Thêm công việc thất bại");
       sql.close();
     } else {
       res.send("Thêm công việc thành công");
@@ -175,11 +221,53 @@ exports.updateCongViec = async (req, res) => {
           sql.close();
         } else {
           // sau khi cập nhật thông tin công việc thành công thì sẽ insert log thực hiện vào bảng LogCongViec
-          const query = `insert into LogCongViec(MaCV, MoTa) values 
-                        (${rows.recordset[0].MaCV}, N'${req.body.MoTa}')`;
+          const query = `insert into LogCongViec(MaCV, TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau, NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu, MoTa) values 
+                        (${rows.recordset[0].MaCV}, N'${
+            congViec.TieuDe ? congViec.TieuDe : rows.recordset[0].TieuDe
+          }', N'${
+            congViec.NoiDung ? congViec.NoiDung : rows.recordset[0].NoiDung
+          }', '${
+            congViec.GioBatDau
+              ? congViec.GioBatDau
+              : rows.recordset[0].GioBatDau.toISOString()
+              .split("T")[1]
+              .split(".")[0]
+          }', '${
+            congViec.GioKetThuc
+              ? congViec.GioKetThuc
+              : rows.recordset[0].GioKetThuc.toISOString()
+              .split("T")[1]
+              .split(".")[0]
+          }', '${
+            congViec.NgayBatDau
+              ? congViec.NgayBatDau
+              : rows.recordset[0].NgayBatDau.toISOString().split("T")[0]
+          }', '${
+            congViec.NgayKetThuc
+              ? congViec.NgayKetThuc
+              : rows.recordset[0].NgayKetThuc.toISOString().split("T")[0]
+          }', N'${
+            congViec.TrangThai
+              ? congViec.TrangThai
+              : rows.recordset[0].TrangThai
+          }', ${congViec.TienDo ? congViec.TienDo : rows.recordset[0].TienDo}, N'${
+            congViec.GhiChu ? congViec.GhiChu : rows.recordset[0].GhiChu
+          }', ${
+            congViec.MaNguoiLam
+              ? congViec.MaNguoiLam
+              : rows.recordset[0].MaNguoiLam
+          }, ${
+            congViec.MaNguoiGiao
+              ? congViec.MaNguoiGiao
+              : rows.recordset[0].MaNguoiGiao
+          }, ${
+            congViec.MaNguoiGiao
+              ? congViec.MaNguoiGiao
+              : rows.recordset[0].MaNguoiGiao
+          }, N'${req.body.MoTa}')`;
           sql.query(query, (err, rows) => {
             if (err) {
-              res.send("Có lỗi xảy ra khi thêm log công việc");
+              res.status(500).send("Có lỗi xảy ra khi thêm log công việc");
               console.log(err);
               sql.close();
             } else {
@@ -213,7 +301,7 @@ exports.updateCongViec = async (req, res) => {
 //     Kieu: req.body.Kieu,
 //   };
 
-//   const query = `insert into CongViec(TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau, NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu) values 
+//   const query = `insert into CongViec(TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau, NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu) values
 //                   (N'${congViec.TieuDe}', N'${congViec.NoiDung}', '${
 //     congViec.GioBatDau
 //   }', '${congViec.GioKetThuc}', '${congViec.NgayBatDau}', '${

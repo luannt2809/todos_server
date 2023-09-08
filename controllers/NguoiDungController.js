@@ -38,7 +38,7 @@ exports.getNguoiDungByID = async (req, res) => {
 
     sql.close();
   } catch (err) {
-    res.send("Lỗi khi lấy dữ liệu");
+    res.status(500).send("Lỗi khi lấy dữ liệu");
     console.log(err);
     sql.close();
   }
@@ -116,32 +116,25 @@ exports.loginNguoiDung = async (req, res) => {
 
   request.execute(procName, async (err, rows) => {
     if (err) {
-      res.send("Có lỗi xảy ra khi đăng nhập");
+      res.status(500).send("Có lỗi xảy ra khi đăng nhập");
       sql.close();
       console.log(err);
     } else if (rows.recordset.length == 0) {
-      res.send("Tên người dùng không tồn tại");
+      res.status(401).send("Tài khoản không tồn tại");
       sql.close();
     } else {
-      request.execute(procName, async (err, rows) => {
-        if (err) {
-          res.send("Có lỗi xảy ra khi đăng nhập");
-          console.log(err);
-          sql.close();
-        } else {
-          const checkMatKhau = await bcrypt.compare(
-            nguoiDung.MatKhau,
-            rows.recordset[0].MatKhau
-          );
-          if (checkMatKhau) {
-            res.send("Đăng nhập thành công");
-            sql.close();
-          } else {
-            res.send("Mật khẩu không đúng");
-            sql.close();
-          }
-        }
-      });
+      const checkMatKhau = await bcrypt.compare(nguoiDung.MatKhau, rows.recordset[0].MatKhau)
+      if(checkMatKhau){
+        console.log(rows.recordset[0].MaND);
+        res.json({
+          msg: "Đăng nhập thành công",
+          maND: rows.recordset[0].MaND,
+        });
+        sql.close();
+      } else {
+        res.status(401).send("Mật khẩu không đúng");
+        sql.close();
+      }
     }
   });
 };
@@ -161,7 +154,7 @@ exports.updateNguoiDung = async (req, res) => {
     TrangThai: req.body.TrangThai,
   };
 
-  const procName = "getNguoiDungByID";
+  const procName = "GetNguoiDungByID";
   const inputParam = nguoiDung.MaND;
 
   const request = new sql.Request();
@@ -194,7 +187,6 @@ exports.updateNguoiDung = async (req, res) => {
           let hashMatKhau;
           if (nguoiDung.MatKhau) {
             hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
-            return;
           }
 
           // kiểm tra TrangThai trả về là true thì gán dữ liệu là 1 còn false thì là 0
