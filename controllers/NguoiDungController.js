@@ -16,7 +16,7 @@ exports.getListNguoiDung = async (req, res) => {
 
     sql.close();
   } catch (err) {
-    res.send("Lỗi khi lấy dữ liệu");
+    res.status(500).send("Lỗi khi lấy dữ liệu");
     console.log(err);
     sql.close();
   }
@@ -53,7 +53,6 @@ exports.registerNguoiDung = async (req, res) => {
     Email: req.body.Email,
     HoTen: req.body.HoTen,
     SoDienThoai: req.body.SoDienThoai,
-    MaVT: req.body.MaVT,
     MaPB: req.body.MaPB,
     TrangThai: req.body.TrangThai,
   };
@@ -66,28 +65,27 @@ exports.registerNguoiDung = async (req, res) => {
 
   request.execute(procName, async (err, rows) => {
     if (err) {
-      res.send("Có lỗi xảy ra khi đăng ký");
+      res.status(500).send("Có lỗi xảy ra khi đăng ký");
       sql.close();
       console.log(err);
     } else if (rows.recordset.length > 0) {
-      res.send("Tên người dùng đã tồn tại");
+      res.status(401).send("Tên người dùng đã tồn tại");
       sql.close();
     } else {
       const salt = await bcrypt.genSalt(12);
       const hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
 
-      const insertND = `insert into NguoiDung(TenNguoiDung, MatKhau, Email, HoTen, SoDienThoai, MaVT, MaPB, TrangThai) values
+      const insertND = `insert into NguoiDung(TenNguoiDung, MatKhau, Email, HoTen, SoDienThoai, MaPB, TrangThai) values
                        ('${nguoiDung.TenNguoiDung}', 
                        '${hashMatKhau}', 
                        '${nguoiDung.Email}', 
                         N'${nguoiDung.HoTen}', 
-                       '${nguoiDung.SoDienThoai}', 
-                       '${nguoiDung.MaVT}', 
+                       '${nguoiDung.SoDienThoai}',
                        '${nguoiDung.MaPB}',
                        '${nguoiDung.TrangThai}')`;
       request.query(insertND, (err, rows) => {
         if (err) {
-          res.send("Thêm người dùng thất bại");
+          res.status(500).send("Thêm người dùng thất bại");
           console.log(err);
           sql.close();
         } else {
@@ -122,13 +120,15 @@ exports.loginNguoiDung = async (req, res) => {
     } else if (rows.recordset.length == 0) {
       res.status(401).send("Tài khoản không tồn tại");
       sql.close();
+    } else if (rows.recordset[0].TrangThai != true) {
+      res.status(401).send("Tài khoản khônng hoạt động");
+      sql.close();
     } else {
       const checkMatKhau = await bcrypt.compare(nguoiDung.MatKhau, rows.recordset[0].MatKhau)
       if(checkMatKhau){
-        console.log(rows.recordset[0].MaND);
         res.json({
           msg: "Đăng nhập thành công",
-          maND: rows.recordset[0].MaND,
+          nguoiDung: rows.recordset[0],
         });
         sql.close();
       } else {
@@ -149,7 +149,6 @@ exports.updateNguoiDung = async (req, res) => {
     Email: req.body.Email,
     HoTen: req.body.HoTen,
     SoDienThoai: req.body.SoDienThoai,
-    MaVT: req.body.MaVT,
     MaPB: req.body.MaPB,
     TrangThai: req.body.TrangThai,
   };
@@ -169,16 +168,16 @@ exports.updateNguoiDung = async (req, res) => {
 
   requestCheckTenND.execute(procCheckTenND, async (err, rows) => {
     if (err) {
-      res.send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
+      res.status(500).send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
       console.log(err);
       sql.close();
     } else if (rows.recordset.length > 0) {
-      res.send("Tên người dùng đã tồn tại");
+      res.status(401).send("Tên người dùng đã tồn tại");
       sql.close();
     } else {
       request.execute(procName, async (err, rows) => {
         if (err) {
-          res.send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
+          res.status(500).send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
           console.log(err);
           sql.close();
         } else {
@@ -218,14 +217,13 @@ exports.updateNguoiDung = async (req, res) => {
                 ? nguoiDung.SoDienThoai
                 : rows.recordset[0].SoDienThoai
             }',
-            MaVT = ${nguoiDung.MaVT ? nguoiDung.MaVT : rows.recordset[0].MaVT},
             MaPB = ${nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB},
             TrangThai = ${nguoiDung.TrangThai ? nguoiDung.TrangThai : TrangThai}
             where MaND = ${nguoiDung.MaND}`;
 
           sql.query(query, (err, rows) => {
             if (err) {
-              res.send("Cập nhật thông tin người dùng thất bại");
+              res.status(500).send("Cập nhật thông tin người dùng thất bại");
               console.log(err);
               sql.close();
             } else {

@@ -1,15 +1,11 @@
 var epxress = require("express");
 const {
   getListVaiTro,
-  insertVaiTro,
-  updateVaiTro,
-  deleteVaiTro,
+  getVaiTroByID,
 } = require("../controllers/VaiTroController");
 var router = epxress.Router();
 
 router.get("/list", getListVaiTro);
-router.post("/insert", insertVaiTro);
-router.put("/update/:MaVT", updateVaiTro);
-router.delete("/delete/:MaVT", deleteVaiTro);
+router.get('/:MaVT', getVaiTroByID);
 
 module.exports = router;

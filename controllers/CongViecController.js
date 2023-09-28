@@ -159,7 +159,7 @@ exports.updateCongViec = async (req, res) => {
 
   request.execute(procName, (err, rows) => {
     if (err) {
-      res.send("Có lỗi xảy ra khi cập nhật công việc");
+      res.status(500).send("Có lỗi xảy ra khi cập nhật công việc");
       console.log(err);
       sql.close();
     } else {
@@ -216,7 +216,7 @@ exports.updateCongViec = async (req, res) => {
       sql.query(query, (err, rows1) => {
         // rows1 không có gì trả về
         if (err) {
-          res.send("Cập nhật công việc thất bại");
+          res.status(500).send("Cập nhật công việc thất bại");
           console.log(err);
           sql.close();
         } else {
@@ -230,14 +230,14 @@ exports.updateCongViec = async (req, res) => {
             congViec.GioBatDau
               ? congViec.GioBatDau
               : rows.recordset[0].GioBatDau.toISOString()
-              .split("T")[1]
-              .split(".")[0]
+                  .split("T")[1]
+                  .split(".")[0]
           }', '${
             congViec.GioKetThuc
               ? congViec.GioKetThuc
               : rows.recordset[0].GioKetThuc.toISOString()
-              .split("T")[1]
-              .split(".")[0]
+                  .split("T")[1]
+                  .split(".")[0]
           }', '${
             congViec.NgayBatDau
               ? congViec.NgayBatDau
@@ -250,7 +250,9 @@ exports.updateCongViec = async (req, res) => {
             congViec.TrangThai
               ? congViec.TrangThai
               : rows.recordset[0].TrangThai
-          }', ${congViec.TienDo ? congViec.TienDo : rows.recordset[0].TienDo}, N'${
+          }', ${
+            congViec.TienDo ? congViec.TienDo : rows.recordset[0].TienDo
+          }, N'${
             congViec.GhiChu ? congViec.GhiChu : rows.recordset[0].GhiChu
           }', ${
             congViec.MaNguoiLam
@@ -264,7 +266,11 @@ exports.updateCongViec = async (req, res) => {
             congViec.MaNguoiGiao
               ? congViec.MaNguoiGiao
               : rows.recordset[0].MaNguoiGiao
-          }, N'${req.body.MoTa}')`;
+          }, N'${
+            req.body.MoTa != undefined
+              ? req.body.MoTa
+              : "Cập nhật thông tin công việc"
+          }')`;
           sql.query(query, (err, rows) => {
             if (err) {
               res.status(500).send("Có lỗi xảy ra khi thêm log công việc");
@@ -328,10 +334,10 @@ exports.deleteCongViec = async (req, res) => {
   var congViec = {
     MaCV: req.params.MaCV,
   };
-  const query = `delete from CongViec where MaCV = ${congViec.MaCV}`;
+  const query = `delete from CongViec111 where MaCV = ${congViec.MaCV}`;
   sql.query(query, (err, rows) => {
     if (err) {
-      res.send("Có lỗi xảy ra khi xóa công việc");
+      res.status(500).send("Có lỗi xảy ra khi xóa công việc");
       console.log(err);
       sql.close();
     } else {

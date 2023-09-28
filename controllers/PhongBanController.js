@@ -15,7 +15,7 @@ exports.getListPhongBan = async (req, res) => {
 
     sql.close();
   } catch (err) {
-    res.send("Lỗi khi lấy dữ liệu");
+    res.status(500).send("Lỗi khi lấy dữ liệu");
     console.log(err);
     sql.close();
   }
@@ -25,17 +25,18 @@ exports.insertPhongBan = async (req, res) => {
   await sql.connect(dbConfig);
   var phongBan = {
     TenPhongBan: req.body.TenPhongBan,
+    ArrMaVT: req.body.ArrMaVT
   };
 
-  const query = `insert into PhongBan(TenPhongBan) values (N'${phongBan.TenPhongBan}')`;
+  const query = `insert into PhongBan(TenPhongBan, ArrMaVT) values (N'${phongBan.TenPhongBan}', '${phongBan.ArrMaVT}')`;
 
   sql.query(query, (err, rows) => {
     if (err) {
-      res.send("Thêm thất bại");
+      res.status(500).send("Thêm phòng ban thất bại");
       console.log(err);
       sql.close();
     } else {
-      res.send("Thêm thành công");
+      res.send("Thêm phòng ban thành công");
       sql.close();
     }
   });
@@ -47,18 +48,19 @@ exports.updatePhongBan = async (req, res) => {
   var phongBan = {
     MaPB: req.params.MaPB,
     TenPhongBan: req.body.TenPhongBan,
+    ArrMaVT: req.body.ArrMaVT
   };
 
-  const query = `update PhongBan set TenPhongBan = N'${phongBan.TenPhongBan}'
+  const query = `update PhongBan set TenPhongBan = N'${phongBan.TenPhongBan}', ArrMaVT = '${phongBan.ArrMaVT}'
                   where MaPB = ${phongBan.MaPB}`;
 
   sql.query(query, (err, rows) => {
     if (err) {
-      res.send("Sửa phòng ban thất bại");
+      res.status(500).send("Cập nhật phòng ban thất bại");
       console.log(err);
       sql.close();
     } else {
-      res.send("Sửa phòng ban thành công");
+      res.send("Cập nhật phòng ban thành công");
       sql.close();
     }
   });
