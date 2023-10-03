@@ -76,13 +76,13 @@ exports.registerNguoiDung = async (req, res) => {
       const hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
 
       const insertND = `insert into NguoiDung(TenNguoiDung, MatKhau, Email, HoTen, SoDienThoai, MaPB, TrangThai) values
-                       ('${nguoiDung.TenNguoiDung}', 
-                       '${hashMatKhau}', 
-                       '${nguoiDung.Email}', 
-                        N'${nguoiDung.HoTen}', 
-                       '${nguoiDung.SoDienThoai}',
-                       '${nguoiDung.MaPB}',
-                       '${nguoiDung.TrangThai}')`;
+                      ('${nguoiDung.TenNguoiDung}', 
+                      '${hashMatKhau}', 
+                      '${nguoiDung.Email}', 
+                      N'${nguoiDung.HoTen}', 
+                      '${nguoiDung.SoDienThoai}',
+                      '${nguoiDung.MaPB}',
+                      '${nguoiDung.TrangThai}')`;
       request.query(insertND, (err, rows) => {
         if (err) {
           res.status(500).send("Thêm người dùng thất bại");
@@ -124,8 +124,11 @@ exports.loginNguoiDung = async (req, res) => {
       res.status(401).send("Tài khoản khônng hoạt động");
       sql.close();
     } else {
-      const checkMatKhau = await bcrypt.compare(nguoiDung.MatKhau, rows.recordset[0].MatKhau)
-      if(checkMatKhau){
+      const checkMatKhau = await bcrypt.compare(
+        nguoiDung.MatKhau,
+        rows.recordset[0].MatKhau
+      );
+      if (checkMatKhau) {
         res.json({
           msg: "Đăng nhập thành công",
           nguoiDung: rows.recordset[0],
@@ -177,7 +180,9 @@ exports.updateNguoiDung = async (req, res) => {
     } else {
       request.execute(procName, async (err, rows) => {
         if (err) {
-          res.status(500).send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
+          res
+            .status(500)
+            .send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
           console.log(err);
           sql.close();
         } else {
