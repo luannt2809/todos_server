@@ -4,6 +4,7 @@ const {
   insertThongBao,
   TestStore,
 } = require("../controllers/ThongBaoController");
+const { getMessaging } = require("firebase-admin/messaging");
 var router = epxress.Router();
 
 router.get("/list", getListThongBao);

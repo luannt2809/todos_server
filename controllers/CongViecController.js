@@ -89,6 +89,26 @@ exports.getCongViecByID = async (req, res) => {
   }
 };
 
+exports.getAllTaskAssigned = async (req, res) => {
+  try {
+    await sql.connect(dbConfig);
+
+    const procName = "GetAllTaskAssigned";
+
+    const request = new sql.Request();
+
+    const result = await request.execute(procName);
+
+    res.json(result.recordset);
+
+    sql.close();
+  } catch (err) {
+    res.status(500).send("Lỗi khi lấy dữ liệu");
+    console.log(err);
+    sql.close();
+  }
+};
+
 exports.insertCongViec = async (req, res) => {
   await sql.connect(dbConfig);
 
@@ -106,6 +126,8 @@ exports.insertCongViec = async (req, res) => {
     MaNguoiGiao: req.body.MaNguoiGiao,
     Kieu: req.body.Kieu,
   };
+
+  console.log(congViec);
 
   const query = `insert into CongViec(TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau, NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu) values 
                   (N'${congViec.TieuDe}', N'${congViec.NoiDung}', '${
@@ -262,11 +284,7 @@ exports.updateCongViec = async (req, res) => {
             congViec.MaNguoiGiao
               ? congViec.MaNguoiGiao
               : rows.recordset[0].MaNguoiGiao
-          }, ${
-            congViec.MaNguoiGiao
-              ? congViec.MaNguoiGiao
-              : rows.recordset[0].MaNguoiGiao
-          }, N'${
+          }, ${congViec.Kieu ? congViec.Kieu : rows.recordset[0].Kieu}, N'${
             req.body.MoTa != undefined
               ? req.body.MoTa
               : "Cập nhật thông tin công việc"
@@ -334,15 +352,49 @@ exports.deleteCongViec = async (req, res) => {
   var congViec = {
     MaCV: req.params.MaCV,
   };
-  const query = `delete from CongViec111 where MaCV = ${congViec.MaCV}`;
-  sql.query(query, (err, rows) => {
-    if (err) {
-      res.status(500).send("Có lỗi xảy ra khi xóa công việc");
-      console.log(err);
-      sql.close();
-    } else {
-      res.send("Xóa công việc thành công");
-      sql.close();
-    }
-  });
+
+  const procName = "GetLogCongViecByMaCV";
+  const inputParam = congViec.MaCV;
+
+  const request = new sql.Request();
+  request.input("MaCV", sql.Int, inputParam);
+
+  const result = await request.execute(procName);
+  console.log(result.recordset.length);
+  console.log(congViec.MaCV);
+
+  if (result.recordset.length == 0) {
+    const query = `delete from CongViec where MaCV = ${congViec.MaCV}`;
+    sql.query(query, (err, rows) => {
+      if (err) {
+        res.status(500).send("Có lỗi xảy ra khi xóa công việc");
+        console.log(err);
+        sql.close();
+      } else {
+        res.send("Xóa công việc thành công");
+        sql.close();
+      }
+    });
+  } else {
+    const query1 = `delete from LogCongViec where LogCongViec.MaCV = ${congViec.MaCV}`;
+    const query2 = `delete from CongViec where CongViec.MaCV = ${congViec.MaCV}`;
+    sql.query(query1, (err, rows) => {
+      if (err) {
+        res.status(500).send("Có lỗi xảy ra khi xóa công việc");
+        console.log(err);
+        sql.close();
+      } else {
+        sql.query(query2, (err, rows) => {
+          if (err) {
+            res.status(500).send("Có lỗi xảy ra khi xóa công việc");
+            console.log(err);
+            sql.close();
+          } else {
+            res.send("Xóa công việc thành công");
+            sql.close();
+          }
+        });
+      }
+    });
+  }
 };
