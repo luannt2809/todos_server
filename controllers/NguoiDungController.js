@@ -44,6 +44,28 @@ exports.getNguoiDungByID = async (req, res) => {
   }
 };
 
+exports.getAllOthers = async (req, res) => {
+  try {
+    await sql.connect(dbConfig);
+
+    const procName = "GetAllOthers";
+    const inputParam = req.params.MaND;
+
+    const request = new sql.Request();
+    request.input("MaND", sql.Int, inputParam);
+
+    const result = await request.execute(procName);
+
+    res.json(result.recordset);
+
+    sql.close();
+  } catch (err) {
+    res.status(500).send("Lỗi khi lấy dữ liệu");
+    console.log(err);
+    sql.close();
+  }
+};
+
 exports.registerNguoiDung = async (req, res) => {
   await sql.connect(dbConfig);
 
@@ -156,6 +178,7 @@ exports.updateNguoiDung = async (req, res) => {
     TrangThai: req.body.TrangThai,
   };
 
+  // check tồn tại nd
   const procName = "GetNguoiDungByID";
   const inputParam = nguoiDung.MaND;
 
@@ -169,75 +192,144 @@ exports.updateNguoiDung = async (req, res) => {
   const requestCheckTenND = new sql.Request();
   requestCheckTenND.input("Username", sql.VarChar(20), inputParamTenND);
 
-  requestCheckTenND.execute(procCheckTenND, async (err, rows) => {
+  // bat dau sua
+  request.execute(procName, async (err, rows) => {
     if (err) {
       res.status(500).send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
       console.log(err);
       sql.close();
-    } else if (rows.recordset.length > 0) {
-      res.status(401).send("Tên người dùng đã tồn tại");
+    } else if (rows.recordset.length == 0) {
+      res.status(401).send("Người dùng không tồn tại");
+      console.log(err);
       sql.close();
     } else {
-      request.execute(procName, async (err, rows) => {
-        if (err) {
-          res
-            .status(500)
-            .send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
-          console.log(err);
-          sql.close();
-        } else {
-          const salt = await bcrypt.genSalt(12);
-          // kiểm tra mật khẩu có thay đổi thì mã hóa
-          let hashMatKhau;
-          if (nguoiDung.MatKhau) {
-            hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
-          }
-
-          // kiểm tra TrangThai trả về là true thì gán dữ liệu là 1 còn false thì là 0
-          let TrangThai;
-          if (rows.recordset[0].TrangThai == true) {
-            TrangThai = 1;
-          } else {
-            TrangThai = 0;
-          }
-
-          // truy vấn update
-          const query = `update NguoiDung set
-            TenNguoiDung = '${
-              nguoiDung.TenNguoiDung
-                ? nguoiDung.TenNguoiDung
-                : rows.recordset[0].TenNguoiDung
-            }',
-            MatKhau = '${
-              nguoiDung.MatKhau ? hashMatKhau : rows.recordset[0].MatKhau
-            }',
-            Email = '${
-              nguoiDung.Email ? nguoiDung.Email : rows.recordset[0].Email
-            }',
-            HoTen = N'${
-              nguoiDung.HoTen ? nguoiDung.HoTen : rows.recordset[0].HoTen
-            }',
-            SoDienThoai = '${
-              nguoiDung.SoDienThoai
-                ? nguoiDung.SoDienThoai
-                : rows.recordset[0].SoDienThoai
-            }',
-            MaPB = ${nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB},
-            TrangThai = ${nguoiDung.TrangThai ? nguoiDung.TrangThai : TrangThai}
-            where MaND = ${nguoiDung.MaND}`;
-
-          sql.query(query, (err, rows) => {
-            if (err) {
-              res.status(500).send("Cập nhật thông tin người dùng thất bại");
-              console.log(err);
-              sql.close();
-            } else {
-              res.send("Cập nhật thông tin người dùng thành công");
-              sql.close();
-            }
-          });
+      console.log(nguoiDung);
+      if (nguoiDung.TenNguoiDung == rows.recordset[0].TenNguoiDung) {
+        const salt = await bcrypt.genSalt(12);
+        // kiểm tra mật khẩu có thay đổi thì mã hóa
+        let hashMatKhau;
+        if (nguoiDung.MatKhau) {
+          hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
         }
-      });
+
+        let trangThai;
+        if (nguoiDung.TrangThai == undefined) {
+          if (rows.recordset[0].TrangThai == true) {
+            trangThai = 1;
+          } else {
+            trangThai = 0;
+          }
+        }
+
+        // truy vấn update
+        const query = `update NguoiDung set
+              TenNguoiDung = '${
+                nguoiDung.TenNguoiDung
+                  ? nguoiDung.TenNguoiDung
+                  : rows.recordset[0].TenNguoiDung
+              }',
+              MatKhau = '${
+                nguoiDung.MatKhau ? hashMatKhau : rows.recordset[0].MatKhau
+              }',
+              Email = '${
+                nguoiDung.Email ? nguoiDung.Email : rows.recordset[0].Email
+              }',
+              HoTen = N'${
+                nguoiDung.HoTen ? nguoiDung.HoTen : rows.recordset[0].HoTen
+              }',
+              SoDienThoai = '${
+                nguoiDung.SoDienThoai
+                  ? nguoiDung.SoDienThoai
+                  : rows.recordset[0].SoDienThoai
+              }',
+              MaPB = ${
+                nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB
+              },
+              TrangThai = ${
+                nguoiDung.TrangThai != undefined ? nguoiDung.TrangThai : trangThai
+              }
+              where MaND = ${nguoiDung.MaND}`;
+
+        sql.query(query, (err, rows) => {
+          if (err) {
+            res.status(500).send("Cập nhật thông tin người dùng thất bại");
+            console.log(err);
+            sql.close();
+          } else {
+            res.send("Cập nhật thông tin người dùng thành công");
+            sql.close();
+          }
+        });
+      } else {
+        requestCheckTenND.execute(procCheckTenND, async (err, rows1) => {
+          if (err) {
+            res
+              .status(500)
+              .send("Có lỗi xảy ra khi cập nhật thông tin người dùng");
+            console.log(err);
+            sql.close();
+          } else if (rows1.recordset.length > 0) {
+            res.status(401).send("Tên người dùng đã tồn tại");
+            sql.close();
+          } else {
+            const salt = await bcrypt.genSalt(12);
+            // kiểm tra mật khẩu có thay đổi thì mã hóa
+            let hashMatKhau;
+            if (nguoiDung.MatKhau) {
+              hashMatKhau = await bcrypt.hash(nguoiDung.MatKhau, salt);
+            }
+
+            let trangThai;
+            if (nguoiDung.TrangThai == undefined) {
+              if (rows.recordset[0].TrangThai == true) {
+                trangThai = 1;
+              } else {
+                trangThai = 0;
+              }
+            }
+
+            // truy vấn update
+            const query = `update NguoiDung set
+                  TenNguoiDung = '${
+                    nguoiDung.TenNguoiDung
+                      ? nguoiDung.TenNguoiDung
+                      : rows.recordset[0].TenNguoiDung
+                  }',
+                  MatKhau = '${
+                    nguoiDung.MatKhau ? hashMatKhau : rows.recordset[0].MatKhau
+                  }',
+                  Email = '${
+                    nguoiDung.Email ? nguoiDung.Email : rows.recordset[0].Email
+                  }',
+                  HoTen = N'${
+                    nguoiDung.HoTen ? nguoiDung.HoTen : rows.recordset[0].HoTen
+                  }',
+                  SoDienThoai = '${
+                    nguoiDung.SoDienThoai
+                      ? nguoiDung.SoDienThoai
+                      : rows.recordset[0].SoDienThoai
+                  }',
+                  MaPB = ${
+                    nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB
+                  },
+                  TrangThai = ${
+                    nguoiDung.TrangThai != undefined ? nguoiDung.TrangThai : trangThai
+                  }
+                  where MaND = ${nguoiDung.MaND}`;
+
+            sql.query(query, (err, rows) => {
+              if (err) {
+                res.status(500).send("Cập nhật thông tin người dùng thất bại");
+                console.log(err);
+                sql.close();
+              } else {
+                res.send("Cập nhật thông tin người dùng thành công");
+                sql.close();
+              }
+            });
+          }
+        });
+      }
     }
   });
 };

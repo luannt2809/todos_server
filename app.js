@@ -13,7 +13,7 @@ var NguoiDungRouter = require("./routes/NguoiDung");
 var CongViecRouter = require("./routes/CongViec");
 var NguoiLienQuanRouter = require("./routes/NguoiLienQuan");
 var ThongBaoRouter = require("./routes/ThongBao");
-var LogCongViecRouter = require('./routes/LogCongViec')
+var LogCongViecRouter = require("./routes/LogCongViec");
 
 var app = express();
 
