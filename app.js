@@ -4,6 +4,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var bodyParser = require("body-parser");
+var admin = require('firebase-admin')
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -14,6 +15,11 @@ var CongViecRouter = require("./routes/CongViec");
 var NguoiLienQuanRouter = require("./routes/NguoiLienQuan");
 var ThongBaoRouter = require("./routes/ThongBao");
 var LogCongViecRouter = require("./routes/LogCongViec");
+
+var serviceAccount = require("./config/todosapp-3e3a0-firebase-adminsdk-se2z8-8b953ecf1d.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 var app = express();
 

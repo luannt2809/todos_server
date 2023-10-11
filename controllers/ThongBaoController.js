@@ -1,5 +1,35 @@
 const dbConfig = require("../config/dbConfig");
 const sql = require("mssql");
+var admin = require('firebase-admin')
+
+exports.sendNotification = (req, res, next) => {
+  const registrationToken = req.body.registrationToken;
+
+  const message = {
+    token: registrationToken,
+    // set tieu de va noi dung thong bao hien thi
+    notification: {
+      title: "Demo thong bao title",
+      body: "Demo thong bao body",
+    },
+    // data nay la cua thong bao se gui ve cho client
+    data: {
+      title: "Data title thong bao",
+      body: "Data boy thong bao",
+    },
+  };
+
+  admin
+    .messaging()
+    .send(message)
+    .then((response) => {
+      res.status(200).send(`Gửi thông báo thành công ${response}`);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send("Có lỗi xảy ra");
+    });
+};
 
 exports.getListThongBao = async (req, res) => {
   try {

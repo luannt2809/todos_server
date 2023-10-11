@@ -2,12 +2,12 @@ var epxress = require("express");
 const {
   getListThongBao,
   insertThongBao,
-  TestStore,
+  sendNotification,
 } = require("../controllers/ThongBaoController");
-const { getMessaging } = require("firebase-admin/messaging");
 var router = epxress.Router();
 
 router.get("/list", getListThongBao);
+router.post("/send", sendNotification);
 router.post("/insert", insertThongBao);
 router.delete("/delete/:MaTB", insertThongBao);
 
