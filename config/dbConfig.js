@@ -3,11 +3,14 @@
 // module.exports = connectString;
 
 const config = {
-  server: "ADMIN",
+  server: "192.168.1.42",
   user: "luannt2809",
   password: "123456",
   database: "TodosDB",
   trustServerCertificate: true,
+  options: {
+    encrypt: false,
+  }
 };
 
 module.exports = config;
