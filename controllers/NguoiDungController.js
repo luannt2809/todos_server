@@ -125,6 +125,7 @@ exports.loginNguoiDung = async (req, res) => {
   var nguoiDung = {
     TenNguoiDung: req.body.TenNguoiDung,
     MatKhau: req.body.MatKhau,
+    TokenUser: req.body.TokenUser,
   };
 
   // check tồn tại tên người dùng
@@ -143,7 +144,7 @@ exports.loginNguoiDung = async (req, res) => {
       res.status(401).send("Tài khoản không tồn tại");
       sql.close();
     } else if (rows.recordset[0].TrangThai != true) {
-      res.status(401).send("Tài khoản khônng hoạt động");
+      res.status(401).send("Tài khoản không hoạt động");
       sql.close();
     } else {
       const checkMatKhau = await bcrypt.compare(
@@ -151,11 +152,28 @@ exports.loginNguoiDung = async (req, res) => {
         rows.recordset[0].MatKhau
       );
       if (checkMatKhau) {
-        res.json({
-          msg: "Đăng nhập thành công",
-          nguoiDung: rows.recordset[0],
+        const queryUpdateToken = `update NguoiDung set TokenUser = '${nguoiDung.TokenUser}' where MaND = ${rows.recordset[0].MaND}`;
+        request.query(queryUpdateToken, (err1, rows1) => {
+          if (err1) {
+            res.status(500).send("Có lỗi xảy ra khi đăng nhập");
+            sql.close();
+            console.log(err1);
+          } else {
+            request.execute(procName, async (err2, rows2) => {
+              if (err2) {
+                res.status(500).send("Có lỗi xảy ra khi đăng nhập");
+                sql.close();
+                console.log(err2);
+              } else {
+                res.json({
+                  msg: "Đăng nhập thành công",
+                  nguoiDung: rows2.recordset[0],
+                });
+                sql.close();
+              }
+            });
+          }
         });
-        sql.close();
       } else {
         res.status(401).send("Mật khẩu không đúng");
         sql.close();
@@ -246,7 +264,9 @@ exports.updateNguoiDung = async (req, res) => {
                 nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB
               },
               TrangThai = ${
-                nguoiDung.TrangThai != undefined ? nguoiDung.TrangThai : trangThai
+                nguoiDung.TrangThai != undefined
+                  ? nguoiDung.TrangThai
+                  : trangThai
               }
               where MaND = ${nguoiDung.MaND}`;
 
@@ -313,7 +333,9 @@ exports.updateNguoiDung = async (req, res) => {
                     nguoiDung.MaPB ? nguoiDung.MaPB : rows.recordset[0].MaPB
                   },
                   TrangThai = ${
-                    nguoiDung.TrangThai != undefined ? nguoiDung.TrangThai : trangThai
+                    nguoiDung.TrangThai != undefined
+                      ? nguoiDung.TrangThai
+                      : trangThai
                   }
                   where MaND = ${nguoiDung.MaND}`;
 

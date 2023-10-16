@@ -3,7 +3,7 @@ const {
   getListPhongBan,
   insertPhongBan,
   updatePhongBan,
-  deletePhongBan,
+  deletePhongBan, demoNewLib,
 } = require("../controllers/PhongBanController");
 var router = express.Router();
 
