@@ -1,15 +1,16 @@
-// const connectString =
-//   "server=DESKTOP-55BHLHA\\LUANNT;Database=TodosDB;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
-// module.exports = connectString;
-
-const config = {
-  server: "192.168.1.42",
-  user: "luannt2809",
-  password: "123456",
-  database: "TodosDB",
-  trustServerCertificate: true,
+var config = {
+  server: 'ADMIN',  //update me
+  authentication: {
+    type: 'default',
+    options: {
+      userName: 'luannt2809', //update me
+      password: '123456'  //update me
+    }
+  },
   options: {
+    // If you are on Microsoft Azure, you need encryption:
     encrypt: false,
+    database: 'TodosDB'  //update me
   }
 };
 
