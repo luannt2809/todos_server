@@ -1,10 +1,10 @@
 var config = {
-  server: 'ADMIN',  //update me
+  server: 'ADMIN-PC\\LUANNT',  //update me
   authentication: {
     type: 'default',
     options: {
-      userName: 'luannt2809', //update me
-      password: '123456'  //update me
+      userName: 'sa', //update me
+      password: '123abc'  //update me
     }
   },
   options: {

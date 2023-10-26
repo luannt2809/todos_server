@@ -6,7 +6,7 @@ const {
 } = require("../controllers/ThongBaoController");
 var router = epxress.Router();
 
-router.get("/list", getListThongBao);
+router.get("/list/:MaND", getListThongBao);
 router.post("/send", sendNotification);
 router.post("/insert", insertThongBao);
 router.delete("/delete/:MaTB", insertThongBao);
