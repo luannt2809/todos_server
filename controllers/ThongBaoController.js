@@ -38,6 +38,7 @@ exports.getListThongBao = async (req, res) => {
     const procName = "GetAllThongBao";
 
     const request = new sql.Request();
+    request.input("MaND", sql.Int, req.params.MaND)
 
     const result = await request.execute(procName);
 

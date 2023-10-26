@@ -1,7 +1,6 @@
 var sql = require("mssql");
 const dbConfig = require("../config/dbConfig");
 var admin = require("firebase-admin");
-const {response} = require("express");
 var listToken = [];
 
 exports.getListCongViec = async (req, res) => {
@@ -183,17 +182,13 @@ exports.insertCongViec = async (req, res) => {
     };
 
     const query = `insert into CongViec(TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau, NgayKetThuc, TrangThai,
-                                        TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu)
-                   values (N'${congViec.TieuDe}', N'${congViec.NoiDung}', '${
-    congViec.GioBatDau
-  }', '${congViec.GioKetThuc}', '${congViec.NgayBatDau}', '${
-    congViec.NgayKetThuc
-  }',
-                           N'${congViec.TrangThai}', ${congViec.TienDo}, ${
-    congViec.GhiChu ? `N'${congViec.GhiChu}'` : null
-  }, ${congViec.MaNguoiLam ? congViec.MaNguoiLam : null}, ${
-    congViec.MaNguoiGiao ? congViec.MaNguoiGiao : null
-  }, ${congViec.Kieu ? congViec.Kieu : null})`;
+                                TienDo, GhiChu, MaNguoiLam, MaNguoiGiao, Kieu)
+            output inserted.MaCV values (N'${congViec.TieuDe}', N'${congViec.NoiDung}', '${congViec.GioBatDau
+        }', '${congViec.GioKetThuc}', '${congViec.NgayBatDau}', '${congViec.NgayKetThuc
+        }',
+                    N'${congViec.TrangThai}', ${congViec.TienDo}, ${congViec.GhiChu ? `N'${congViec.GhiChu}'` : null
+        }, ${congViec.MaNguoiLam ? congViec.MaNguoiLam : null}, ${congViec.MaNguoiGiao ? congViec.MaNguoiGiao : null
+        }, ${congViec.Kieu ? congViec.Kieu : null})`;
 
     sql.query(query, (err, rows) => {
         if (err) {
@@ -207,8 +202,8 @@ exports.insertCongViec = async (req, res) => {
 
             request.execute(procName, (err1, rows1) => {
                 if (err1) {
-                    console.log(err);
-                    res.status(500).send("Thêm công việc thất bại");
+                    console.log(err1);
+                    res.status(500).send("Có lỗi xảy ra");
                     sql.close();
                 } else {
                     const message = {
@@ -220,11 +215,24 @@ exports.insertCongViec = async (req, res) => {
                     }
 
                     admin.messaging().send(message).then((response) => {
-                        res.send("Thêm công việc thành công");
-                        sql.close();
-                    }).catch((err2) => {
-                        console.log(err2)
+                        const queryInsertNotify = `insert into ThongBao(TieuDe, NoiDung, MaCV, MaND) values 
+                            (N'${message.notification.title}',
+                            N'${message.notification.body}', ${rows.recordset[0].MaCV}, ${congViec.MaNguoiLam})`
+
+                        request.query(queryInsertNotify, (err2, rows2) => {
+                            if (err2) {
+                                console.log(err);
+                                res.status(500).send("Có lỗi xảy ra");
+                                sql.close();
+                            } else {
+                                res.send("Thêm công việc thành công");
+                                sql.close();
+                            }
+                        })
+                    }).catch((err3) => {
+                        console.log(err3)
                         res.status(500).send("Có lỗi xảy ra");
+                        sql.close();
                     })
                 }
             })
@@ -253,7 +261,6 @@ exports.updateCongViec = async (req, res) => {
 
     const procName = "GetCongViecByID";
     const inputParam = congViec.MaCV;
-    // console.log(inputParam);
 
     const request = new sql.Request();
     request.input("MaCV", sql.Int, inputParam);
@@ -264,149 +271,170 @@ exports.updateCongViec = async (req, res) => {
             console.log(err);
             sql.close();
         } else {
-            // console.log(rows.recordset);
             const query = `update CongViec
-                           set TieuDe      = N'${
-                             congViec.TieuDe
-                               ? congViec.TieuDe
-                               : rows.recordset[0].TieuDe
-                           }',
-                               NoiDung     = N'${
-                                 congViec.NoiDung
-                                   ? congViec.NoiDung
-                                   : rows.recordset[0].NoiDung
-                               }',
-                               GioBatDau   = '${
-                                 congViec.GioBatDau
-                                   ? congViec.GioBatDau
-                                   : rows.recordset[0].GioBatDau.toISOString()
-                                       .split("T")[1]
-                                       .split(".")[0]
-                               }',
-                               GioKetThuc  = '${
-                                 congViec.GioKetThuc
-                                   ? congViec.GioKetThuc
-                                   : rows.recordset[0].GioKetThuc.toISOString()
-                                       .split("T")[1]
-                                       .split(".")[0]
-                               }',
-                               NgayBatDau  = '${
-                                 congViec.NgayBatDau
-                                   ? congViec.NgayBatDau
-                                   : rows.recordset[0].NgayBatDau.toISOString().split(
-                                       "T"
-                                     )[0]
-                               }',
-                               NgayKetThuc = '${
-                                 congViec.NgayKetThuc
-                                   ? congViec.NgayKetThuc
-                                   : rows.recordset[0].NgayKetThuc.toISOString().split(
-                                       "T"
-                                     )[0]
-                               }',
-                               TrangThai   = N'${
-                                 congViec.TrangThai
-                                   ? congViec.TrangThai
-                                   : rows.recordset[0].TrangThai
-                               }',
-                               TienDo      = ${
-                                 congViec.TienDo
-                                   ? congViec.TienDo
-                                   : rows.recordset[0].TienDo
-                               },
-                               GhiChu      = N'${
-                                 congViec.GhiChu
-                                   ? congViec.GhiChu
-                                   : rows.recordset[0].GhiChu
-                               }',
-                               MaNguoiLam  = ${
-                                 congViec.MaNguoiLam
-                                   ? congViec.MaNguoiLam
-                                   : rows.recordset[0].MaNguoiLam
-                               },
-                               MaNguoiGiao = ${
-                                 congViec.MaNguoiGiao
-                                   ? congViec.MaNguoiGiao
-                                   : rows.recordset[0].MaNguoiGiao
-                               },
-                               Kieu        = ${
-                                 congViec.Kieu
-                                   ? congViec.Kieu
-                                   : rows.recordset[0].Kieu
-                               }
-                           where MaCV = ${congViec.MaCV}
-            `;
-            sql.query(query, (err, rows1) => {
+                        set TieuDe      = N'${congViec.TieuDe
+                    ? congViec.TieuDe
+                    : rows.recordset[0].TieuDe
+                }',
+                            NoiDung     = N'${congViec.NoiDung
+                    ? congViec.NoiDung
+                    : rows.recordset[0].NoiDung
+                }',
+                            GioBatDau   = '${congViec.GioBatDau
+                    ? congViec.GioBatDau
+                    : rows.recordset[0].GioBatDau.toISOString()
+                        .split("T")[1]
+                        .split(".")[0]
+                }',
+                            GioKetThuc  = '${congViec.GioKetThuc
+                    ? congViec.GioKetThuc
+                    : rows.recordset[0].GioKetThuc.toISOString()
+                        .split("T")[1]
+                        .split(".")[0]
+                }',
+                            NgayBatDau  = '${congViec.NgayBatDau
+                    ? congViec.NgayBatDau
+                    : rows.recordset[0].NgayBatDau.toISOString().split(
+                        "T"
+                    )[0]
+                }',
+                            NgayKetThuc = '${congViec.NgayKetThuc
+                    ? congViec.NgayKetThuc
+                    : rows.recordset[0].NgayKetThuc.toISOString().split(
+                        "T"
+                    )[0]
+                }',
+                            TrangThai   = N'${congViec.TrangThai
+                    ? congViec.TrangThai
+                    : rows.recordset[0].TrangThai
+                }',
+                            TienDo      = ${congViec.TienDo
+                    ? congViec.TienDo
+                    : rows.recordset[0].TienDo
+                },
+                            GhiChu      = N'${congViec.GhiChu
+                    ? congViec.GhiChu
+                    : rows.recordset[0].GhiChu
+                }',
+                            MaNguoiLam  = ${congViec.MaNguoiLam
+                    ? congViec.MaNguoiLam
+                    : rows.recordset[0].MaNguoiLam
+                },
+                            MaNguoiGiao = ${congViec.MaNguoiGiao
+                    ? congViec.MaNguoiGiao
+                    : rows.recordset[0].MaNguoiGiao
+                },
+                            Kieu        = ${congViec.Kieu
+                    ? congViec.Kieu
+                    : rows.recordset[0].Kieu
+                }
+                        where MaCV = ${congViec.MaCV}
+        `;
+            sql.query(query, (err1, rows1) => {
                 // rows1 không có gì trả về
-                if (err) {
+                if (err1) {
                     res.status(500).send("Cập nhật công việc thất bại");
-                    console.log(err);
+                    console.log(err1);
                     sql.close();
                 } else {
                     // sau khi cập nhật thông tin công việc thành công thì sẽ insert log thực hiện vào bảng LogCongViec
                     const query = `insert into LogCongViec(MaCV, TieuDe, NoiDung, GioBatDau, GioKetThuc, NgayBatDau,
-                                                           NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam,
-                                                           MaNguoiGiao, Kieu, MoTa)
-                                   values (${rows.recordset[0].MaCV}, N'${
-            congViec.TieuDe ? congViec.TieuDe : rows.recordset[0].TieuDe
-          }', N'${
-            congViec.NoiDung ? congViec.NoiDung : rows.recordset[0].NoiDung
-          }', '${
-            congViec.GioBatDau
-              ? congViec.GioBatDau
-              : rows.recordset[0].GioBatDau.toISOString()
-                  .split("T")[1]
-                  .split(".")[0]
-          }', '${
-            congViec.GioKetThuc
-              ? congViec.GioKetThuc
-              : rows.recordset[0].GioKetThuc.toISOString()
-                  .split("T")[1]
-                  .split(".")[0]
-          }', '${
-            congViec.NgayBatDau
-              ? congViec.NgayBatDau
-              : rows.recordset[0].NgayBatDau.toISOString().split("T")[0]
-          }', '${
-            congViec.NgayKetThuc
-              ? congViec.NgayKetThuc
-              : rows.recordset[0].NgayKetThuc.toISOString().split("T")[0]
-          }', N'${
-            congViec.TrangThai
-              ? congViec.TrangThai
-              : rows.recordset[0].TrangThai
-          }', ${
-            congViec.TienDo ? congViec.TienDo : rows.recordset[0].TienDo
-          }, N'${
-            congViec.GhiChu ? congViec.GhiChu : rows.recordset[0].GhiChu
-          }', ${
-            congViec.MaNguoiLam
-              ? congViec.MaNguoiLam
-              : rows.recordset[0].MaNguoiLam
-          }, ${
-            congViec.MaNguoiGiao
-              ? congViec.MaNguoiGiao
-              : rows.recordset[0].MaNguoiGiao
-          }, ${congViec.Kieu ? congViec.Kieu : rows.recordset[0].Kieu}, N'${
-            req.body.MoTa != undefined
-              ? req.body.MoTa
-              : "Cập nhật thông tin công việc"
-          }')`;
-                    sql.query(query, (err, rows) => {
-                        if (err) {
+                                                        NgayKetThuc, TrangThai, TienDo, GhiChu, MaNguoiLam,
+                                                        MaNguoiGiao, Kieu, MoTa)
+                                values (${rows.recordset[0].MaCV}, N'${congViec.TieuDe ? congViec.TieuDe : rows.recordset[0].TieuDe
+                        }', N'${congViec.NoiDung ? congViec.NoiDung : rows.recordset[0].NoiDung
+                        }', '${congViec.GioBatDau
+                            ? congViec.GioBatDau
+                            : rows.recordset[0].GioBatDau.toISOString()
+                                .split("T")[1]
+                                .split(".")[0]
+                        }', '${congViec.GioKetThuc
+                            ? congViec.GioKetThuc
+                            : rows.recordset[0].GioKetThuc.toISOString()
+                                .split("T")[1]
+                                .split(".")[0]
+                        }', '${congViec.NgayBatDau
+                            ? congViec.NgayBatDau
+                            : rows.recordset[0].NgayBatDau.toISOString().split("T")[0]
+                        }', '${congViec.NgayKetThuc
+                            ? congViec.NgayKetThuc
+                            : rows.recordset[0].NgayKetThuc.toISOString().split("T")[0]
+                        }', N'${congViec.TrangThai
+                            ? congViec.TrangThai
+                            : rows.recordset[0].TrangThai
+                        }', ${congViec.TienDo ? congViec.TienDo : rows.recordset[0].TienDo
+                        }, N'${congViec.GhiChu ? congViec.GhiChu : rows.recordset[0].GhiChu
+                        }', ${congViec.MaNguoiLam
+                            ? congViec.MaNguoiLam
+                            : rows.recordset[0].MaNguoiLam
+                        }, ${congViec.MaNguoiGiao
+                            ? congViec.MaNguoiGiao
+                            : rows.recordset[0].MaNguoiGiao
+                        }, ${congViec.Kieu ? congViec.Kieu : rows.recordset[0].Kieu}, N'${req.body.MoTa != undefined
+                            ? req.body.MoTa
+                            : "Cập nhật thông tin công việc"
+                        }')`;
+                    sql.query(query, (err2, rows2) => {
+                        if (err2) {
                             res.status(500).send("Có lỗi xảy ra khi thêm log công việc");
-                            console.log(err);
+                            console.log(err2);
                             sql.close();
                         } else {
-                            res.send("Cập nhật công việc thành công");
-                            sql.close();
+                            const requestToken = new sql.Request()
+                            const procGetNguoiDungByID = "GetNguoiDungByID"
+                            requestToken.input("MaND", sql.Int,
+                                rows.recordset[0].MaNguoiGiao != null ?
+                                    rows.recordset[0].MaNguoiGiao :
+                                    rows.recordset[0].MaNguoiLam)
+
+                            requestToken.execute(procGetNguoiDungByID, (err3, rows3) => {
+                                if (err3) {
+                                    console.log(err3);
+                                    res.status(500).send("Có lỗi xảy ra");
+                                    sql.close();
+                                } else {
+                                    const message = {
+                                        token: rows3.recordset[0].TokenUser,
+                                        notification: {
+                                            title: `${congViec.TieuDe} đã được cập nhật`,
+                                            body: `${congViec.NoiDung}`
+                                        },
+                                        data: {
+                                            MaCV: rows.recordset[0].MaCV.toString()
+                                        }
+                                    }
+
+                                    admin.messaging().send(message).then((response) => {
+                                        const queryInsertNotify = `insert into ThongBao(TieuDe, NoiDung, MaCV, MaND) values 
+                                            (N'${message.notification.title}',
+                                            N'${message.notification.body}', ${rows.recordset[0].MaCV}, ${rows.recordset[0].MaNguoiGiao != null ?
+                                                rows.recordset[0].MaNguoiGiao :
+                                                rows.recordset[0].MaNguoiLam})`
+
+                                        requestToken.query(queryInsertNotify, (err4, rows4) => {
+                                            if (err4) {
+                                                console.log(err4);
+                                                res.status(500).send("Có lỗi xảy ra");
+                                                sql.close();
+                                            } else {
+                                                res.send("Câp nhật công việc thành công");
+                                                sql.close();
+                                            }
+                                        })
+                                    }).catch((err5) => {
+                                        console.log(err5)
+                                        res.status(500).send("Có lỗi xảy ra");
+                                        sql.close();
+                                    })
+                                }
+                            })
                         }
-                    });
+                    })
                 }
-            });
+            })
         }
-    });
-};
+    })
+}
 
 exports.deleteCongViec = async (req, res) => {
     await sql.connect(dbConfig);
@@ -430,8 +458,8 @@ exports.deleteCongViec = async (req, res) => {
 
     if (result.recordset.length === 0) {
         const query = `delete
-                       from CongViec
-                       where MaCV = ${congViec.MaCV}`;
+                    from CongViec
+                    where MaCV = ${congViec.MaCV}`;
         sql.query(query, (err, rows) => {
             if (err) {
                 res.status(500).send("Có lỗi xảy ra khi xóa công việc");
@@ -444,11 +472,11 @@ exports.deleteCongViec = async (req, res) => {
         });
     } else {
         const query1 = `delete
-                        from LogCongViec
-                        where LogCongViec.MaCV = ${congViec.MaCV}`;
+                    from LogCongViec
+                    where LogCongViec.MaCV = ${congViec.MaCV}`;
         const query2 = `delete
-                        from CongViec
-                        where CongViec.MaCV = ${congViec.MaCV}`;
+                    from CongViec
+                    where CongViec.MaCV = ${congViec.MaCV}`;
         sql.query(query1, (err, rows) => {
             if (err) {
                 res.status(500).send("Có lỗi xảy ra khi xóa công việc");
@@ -468,47 +496,4 @@ exports.deleteCongViec = async (req, res) => {
             }
         });
     }
-};
-
-const sendNotification = (
-    req,
-    res,
-    registrationToken,
-    maNguoilam,
-    title,
-    body
-) => {
-    const tokensExceptCurrentUser = listToken.filter(
-        (token) => token !== registrationToken
-    );
-
-    if (tokensExceptCurrentUser.length > 0) {
-    }
-
-    const message = {
-        token:
-            "fw26fQdwTkm60i-uy3QGcG:APA91bFpbtkEvztmTpAP-srINuNyqaz70Ag5Fmhb9EfUVv3MzBzGwuenRWyPATp-3C85DfQBvLXTvz49P_RvtDeLkkSZtiitbGCN5p86W6aCKP-rAD6hn0aXAgLgy2WeqXfOSJOfiWxN",
-        // set tieu de va noi dung thong bao hien thi
-        notification: {
-            title: title,
-            body: body,
-        },
-        // data nay la cua thong bao se gui ve cho client
-        data: {
-            title: title,
-            body: body,
-            maNguoilam: maNguoilam.toString(),
-        },
-    };
-
-    admin
-        .messaging()
-        .send(message)
-        .then((response) => {
-            console.log("Gửi thông báo thành công");
-        })
-        .catch((err) => {
-            res.status(500).send("Có lỗi xảy ra");
-            console.log(err);
-        });
 };
